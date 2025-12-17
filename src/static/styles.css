@@ -108,7 +108,7 @@ section h3 {
   font-size: 14px;
 }
 
-.delete-btn {
+.remove-participant-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -119,9 +119,12 @@ section h3 {
   opacity: 0.6;
 }
 
-.delete-btn:hover {
+.remove-participant-btn:hover,
+.remove-participant-btn:focus {
   background-color: #ffebee;
   opacity: 1;
+  outline: 2px solid #f44336;
+  outline-offset: 2px;
 }
 
 .form-group {
