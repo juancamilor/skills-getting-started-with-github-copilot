@@ -23,6 +23,72 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 5000);
   }
 
+  // Function to update a single activity card
+  async function updateActivityCard(activityName) {
+    try {
+      const response = await fetch("/activities");
+      const activities = await response.json();
+      
+      if (!activities[activityName]) {
+        console.error(`Activity ${activityName} not found`);
+        return;
+      }
+
+      const details = activities[activityName];
+      const existingCard = document.querySelector(`[data-activity-name="${activityName}"]`);
+      
+      if (!existingCard) {
+        console.error(`Card for ${activityName} not found`);
+        return;
+      }
+
+      const spotsLeft = details.max_participants - details.participants.length;
+
+      // Update only the dynamic parts
+      const availabilityParagraph = existingCard.querySelector('p:nth-child(4)');
+      availabilityParagraph.innerHTML = `<strong>Availability:</strong> ${spotsLeft} spots left`;
+
+      // Update participants section
+      const participantsSection = existingCard.querySelector('.participants-section');
+      participantsSection.innerHTML = '';
+
+      const participantsLabel = document.createElement("strong");
+      participantsLabel.textContent = "Participants:";
+      participantsSection.appendChild(participantsLabel);
+
+      if (details.participants.length > 0) {
+        const participantsList = document.createElement("ul");
+        participantsList.className = "participants-list";
+
+        details.participants.forEach(email => {
+          const listItem = document.createElement("li");
+          listItem.textContent = email;
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "remove-participant-btn";
+          deleteBtn.setAttribute("data-activity", activityName);
+          deleteBtn.setAttribute("data-email", email);
+          deleteBtn.setAttribute("aria-label", `Remove ${email} from ${activityName}`);
+          deleteBtn.textContent = "🗑️";
+
+          listItem.appendChild(deleteBtn);
+          participantsList.appendChild(listItem);
+        });
+
+        participantsSection.appendChild(participantsList);
+      } else {
+        const noParticipants = document.createElement("p");
+        noParticipants.className = "no-participants";
+        noParticipants.textContent = "No participants yet. Be the first to sign up!";
+        participantsSection.appendChild(noParticipants);
+      }
+    } catch (error) {
+      console.error("Error updating activity card:", error);
+      // Fallback to full refresh on error
+      fetchActivities();
+    }
+  }
+
   // Function to fetch activities from API
   async function fetchActivities() {
     try {
@@ -128,8 +194,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.ok) {
         showMessage(result.message, "success");
         signupForm.reset();
-        // Refresh activities list to show new participant
-        fetchActivities();
+        // Update only the affected activity card instead of refreshing everything
+        updateActivityCard(activity);
       } else {
         showMessage(result.detail || "An error occurred", "error");
       }
@@ -161,8 +227,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const result = await response.json();
 
         if (response.ok) {
-          // Refresh activities list
-          fetchActivities();
+          // Update only the affected activity card instead of refreshing everything
+          updateActivityCard(activity);
           showMessage(result.message, "success");
         } else {
           showMessage(result.detail || "An error occurred", "error");
