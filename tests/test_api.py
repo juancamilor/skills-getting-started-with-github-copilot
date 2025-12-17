@@ -1,5 +1,12 @@
 """
-Tests for the High School Management System API
+Tests for the High School Management System API.
+
+This module includes tests for:
+- Root endpoint behavior
+- Activity retrieval endpoints
+- Signup to activities
+- Unregistration from activities
+- Integration scenarios combining multiple operations
 """
 import pytest
 from fastapi.testclient import TestClient
@@ -129,6 +136,22 @@ class TestSignupForActivity:
         activities_response = client.get("/activities")
         activities_data = activities_response.json()
         assert "newcoder@mergington.edu" in activities_data["Programming Class"]["participants"]
+    
+    def test_signup_at_max_capacity_fails(self, client):
+        """Test that signup fails when activity is at maximum capacity"""
+        # Fill Chess Club to capacity (max 12, currently has 2)
+        for i in range(10):
+            response = client.post(
+                f"/activities/Chess Club/signup?email=student{i}@mergington.edu"
+            )
+            assert response.status_code == 200
+        
+        # Try to add one more (should fail)
+        response = client.post(
+            "/activities/Chess Club/signup?email=overflow@mergington.edu"
+        )
+        assert response.status_code == 400
+        assert "full" in response.json()["detail"].lower() or "capacity" in response.json()["detail"].lower()
 
 
 class TestUnregisterFromActivity:
@@ -181,8 +204,8 @@ class TestUnregisterFromActivity:
 class TestIntegrationScenarios:
     """Integration tests for common user workflows"""
     
-    def test_signup_and_unregister_workflow(self, client):
-        """Test complete workflow: signup then unregister"""
+    def test_complete_signup_unregister_workflow(self, client):
+        """Test complete workflow: signup then unregister with participant count verification"""
         email = "workflow@mergington.edu"
         activity = "Chess Club"
         

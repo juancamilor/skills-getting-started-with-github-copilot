@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 import os
 from pathlib import Path
+import threading
+import re
 
 app = FastAPI(title="Mergington High School API",
               description="API for viewing and signing up for extracurricular activities")
@@ -77,6 +79,9 @@ activities = {
     }
 }
 
+# Thread lock for thread-safe operations on activities dictionary
+activities_lock = threading.Lock()
+
 
 @app.get("/")
 def root():
@@ -95,16 +100,26 @@ def signup_for_activity(activity_name: str, email: str):
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    # Get the specific activity
-    activity = activities[activity_name]
+    # Validate email format
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@mergington\.edu$'
+    if not re.match(email_pattern, email):
+        raise HTTPException(status_code=400, detail="Invalid email format. Must be a mergington.edu email address")
 
-    # Validate student is not already signed up
-    if email in activity["participants"]:
-        raise HTTPException(status_code=400, detail="Student already signed up for this activity")
-    
-    # Add student
-    activity["participants"].append(email)
-    return {"message": f"Signed up {email} for {activity_name}"}
+    with activities_lock:
+        # Get the specific activity
+        activity = activities[activity_name]
+
+        # Validate student is not already signed up
+        if email in activity["participants"]:
+            raise HTTPException(status_code=400, detail="Student already signed up for this activity")
+        
+        # Check if activity is at maximum capacity
+        if len(activity["participants"]) >= activity["max_participants"]:
+            raise HTTPException(status_code=400, detail="Activity is full")
+        
+        # Add student
+        activity["participants"].append(email)
+        return {"message": f"Signed up {email} for {activity_name}"}
 
 
 @app.delete("/activities/{activity_name}/unregister")
@@ -114,13 +129,19 @@ def unregister_from_activity(activity_name: str, email: str):
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
 
-    # Get the specific activity
-    activity = activities[activity_name]
+    # Validate email format
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@mergington\.edu$'
+    if not re.match(email_pattern, email):
+        raise HTTPException(status_code=400, detail="Invalid email format. Must be a mergington.edu email address")
 
-    # Validate student is signed up
-    if email not in activity["participants"]:
-        raise HTTPException(status_code=400, detail="Student is not signed up for this activity")
-    
-    # Remove student
-    activity["participants"].remove(email)
-    return {"message": f"Unregistered {email} from {activity_name}"}
+    with activities_lock:
+        # Get the specific activity
+        activity = activities[activity_name]
+
+        # Validate student is signed up
+        if email not in activity["participants"]:
+            raise HTTPException(status_code=400, detail="Student is not signed up for this activity")
+        
+        # Remove student
+        activity["participants"].remove(email)
+        return {"message": f"Unregistered {email} from {activity_name}"}
