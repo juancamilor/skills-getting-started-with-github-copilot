@@ -100,6 +100,11 @@ def signup_for_activity(activity_name: str, email: str):
     if activity_name not in activities:
         raise HTTPException(status_code=404, detail="Activity not found")
 
+    # Validate email format
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@mergington\.edu$'
+    if not re.match(email_pattern, email):
+        raise HTTPException(status_code=400, detail="Invalid email format. Must be a mergington.edu email address")
+
     with activities_lock:
         # Get the specific activity
         activity = activities[activity_name]

@@ -4,13 +4,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const signupForm = document.getElementById("signup-form");
   const messageDiv = document.getElementById("message");
 
-  // Helper function to escape HTML to prevent XSS
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
   // Helper function to show messages
   function showMessage(text, type) {
     messageDiv.textContent = text;
@@ -45,8 +38,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const spotsLeft = details.max_participants - details.participants.length;
 
       // Update only the dynamic parts
-      const availabilityParagraph = existingCard.querySelector('p:nth-child(4)');
-      availabilityParagraph.innerHTML = `<strong>Availability:</strong> ${spotsLeft} spots left`;
+      const availabilityParagraph = existingCard.querySelector('.availability');
+      if (availabilityParagraph) {
+        availabilityParagraph.innerHTML = '';
+        const availabilityStrong = document.createElement("strong");
+        availabilityStrong.textContent = "Availability:";
+        availabilityParagraph.appendChild(availabilityStrong);
+        availabilityParagraph.appendChild(document.createTextNode(` ${spotsLeft} spots left`));
+      }
 
       // Update participants section
       const participantsSection = existingCard.querySelector('.participants-section');
@@ -114,10 +113,17 @@ document.addEventListener("DOMContentLoaded", () => {
         description.textContent = details.description;
 
         const schedule = document.createElement("p");
-        schedule.innerHTML = `<strong>Schedule:</strong> ${escapeHtml(details.schedule)}`;
+        const scheduleStrong = document.createElement("strong");
+        scheduleStrong.textContent = "Schedule:";
+        schedule.appendChild(scheduleStrong);
+        schedule.appendChild(document.createTextNode(" " + details.schedule));
 
         const availability = document.createElement("p");
-        availability.innerHTML = `<strong>Availability:</strong> ${spotsLeft} spots left`;
+        availability.className = "availability";
+        const availabilityStrong = document.createElement("strong");
+        availabilityStrong.textContent = "Availability:";
+        availability.appendChild(availabilityStrong);
+        availability.appendChild(document.createTextNode(` ${spotsLeft} spots left`));
 
         const participantsSection = document.createElement("div");
         participantsSection.className = "participants-section";
