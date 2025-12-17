@@ -40,7 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Update only the dynamic parts
       const availabilityParagraph = existingCard.querySelector('.availability');
       if (availabilityParagraph) {
-        availabilityParagraph.innerHTML = '';
+        while (availabilityParagraph.firstChild) {
+          availabilityParagraph.removeChild(availabilityParagraph.firstChild);
+        }
         const availabilityStrong = document.createElement("strong");
         availabilityStrong.textContent = "Availability:";
         availabilityParagraph.appendChild(availabilityStrong);
@@ -49,7 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Update participants section
       const participantsSection = existingCard.querySelector('.participants-section');
-      participantsSection.innerHTML = '';
+      while (participantsSection.firstChild) {
+        participantsSection.removeChild(participantsSection.firstChild);
+      }
 
       const participantsLabel = document.createElement("strong");
       participantsLabel.textContent = "Participants:";
@@ -95,7 +99,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const activities = await response.json();
 
       // Clear loading message
-      activitiesList.innerHTML = "";
+      while (activitiesList.firstChild) {
+        activitiesList.removeChild(activitiesList.firstChild);
+      }
 
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
